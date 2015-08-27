@@ -296,12 +296,12 @@ pbgzf_init(int fd, const char* __restrict mode)
   }
   else { // read from a compressed file
       if(strchr(mode, 'u')) {// hidden functionality
-          fp->r = reader_init(fd, fp->input, 1, fp->pool); // read the uncompressed file
+          fp->r = reader_init(fd, fp->input, 1, fp->pool, -1); // read the uncompressed file
           fp->p = producer_init(fp->r);
           fp->c = consumers_init(fp->num_threads, fp->input, fp->output, fp->r, 2, compress_level, compress_type); // do nothing
       }
       else {
-          fp->r = reader_init(fd, fp->input, 0, fp->pool); // read the compressed file
+          fp->r = reader_init(fd, fp->input, 0, fp->pool, -1); // read the compressed file
           fp->p = producer_init(fp->r);
           fp->c = consumers_init(fp->num_threads, fp->input, fp->output, fp->r, 0, compress_level, compress_type); // inflate
           fp->eof_ok = bgzf_check_EOF(fp->r->fp_bgzf);
@@ -696,7 +696,7 @@ void pbgzf_set_cache_size(PBGZF *fp, int cache_size)
 }
 
 void
-pbgzf_main(int f_src, int f_dst, int compress, int compress_level, int compress_type, int queue_size, int num_threads)
+pbgzf_main(int f_src, int f_dst, int compress, int compress_level, int compress_type, int queue_size, int num_threads, int uncompressed_block_size)
 {
   // NB: this gives us greater control over queue size and the like
   queue_t *input = NULL;
@@ -712,7 +712,7 @@ pbgzf_main(int f_src, int f_dst, int compress, int compress_level, int compress_
   input = queue_init(queue_size, 0, 1, num_threads);
   output = queue_init(queue_size, 1, num_threads, 1);
 
-  r = reader_init(f_src, input, compress, pool);
+  r = reader_init(f_src, input, compress, pool, uncompressed_block_size);
   w = writer_init(f_dst, output, compress, compress_level, compress_type, pool);
   c = consumers_init(num_threads, input, output, r, compress, compress_level, compress_type);
   p = producer_init(r);

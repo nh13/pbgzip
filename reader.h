@@ -9,10 +9,11 @@ typedef struct {
     uint8_t is_closed;
     uint8_t compress;
     block_pool_t *pool;
+	int32_t uncompressed_block_size; // when read uncompressed data
 } reader_t;
 
 reader_t*
-reader_init(int fd, queue_t *input, uint8_t compress, block_pool_t *pool);
+reader_init(int fd, queue_t *input, uint8_t compress, block_pool_t *pool, int32_t uncompressed_block_size);
 
 void*
 reader_run(void *arg);

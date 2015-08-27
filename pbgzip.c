@@ -52,6 +52,9 @@ pbgzip_main_usage()
   fprintf(stderr, "         -t INT    the compress type (0 - gz, 1 - bz2) [%d]\n", 0);
 #endif
   fprintf(stderr, "         -1 .. -9  the compression level [%d]\n", Z_DEFAULT_COMPRESSION);
+  fprintf(stderr, "         -S        the block size when reading uncompressed data (must be less than or equal to %d; -1 is auto) [%d]\n",
+		  MAX_BLOCK_SIZE,
+		  -1);
   fprintf(stderr, "         -h        give this help\n");
   fprintf(stderr, "\n");
   return 1;
@@ -62,14 +65,15 @@ int
 main(int argc, char *argv[])
 {
   int opt, f_src, f_dst;
-  int32_t compress, compress_level, compress_type, pstdout, is_forced, queue_size, n_threads;
+  int32_t compress, compress_level, compress_type, pstdout, is_forced, queue_size, n_threads, uncompressed_block_size;
 
   compress = 1; compress_level = -1; compress_type = 0;
   pstdout = 0; is_forced = 0; queue_size = 1000; n_threads = detect_cpus();
+  uncompressed_block_size = -1;
 #ifndef DISABLE_BZ2
-  while((opt = getopt(argc, argv, "cdhfn:t:q:0123456789")) >= 0){
+  while((opt = getopt(argc, argv, "cdhfn:t:q:S:0123456789")) >= 0){
 #else
-  while((opt = getopt(argc, argv, "cdhfn:q:0123456789")) >= 0){
+  while((opt = getopt(argc, argv, "cdhfn:q:S:0123456789")) >= 0){
 #endif
       if('0' <= opt && opt <= '9') {
           compress_level = opt - '0'; 
@@ -84,6 +88,7 @@ main(int argc, char *argv[])
 #ifndef DISABLE_BZ2
         case 't': compress_type = atoi(optarg); break;
 #endif
+		case 'S': uncompressed_block_size = atoi(optarg); break;
         case 'h': 
         default:
                   return pbgzip_main_usage();
@@ -91,6 +96,14 @@ main(int argc, char *argv[])
   }
 
   if(argc <= 1) return pbgzip_main_usage();
+
+  if(MAX_BLOCK_SIZE < uncompressed_block_size) {
+      fprintf(stderr, "[pbgzip] -S (%d) was too big; must be less than or equal to %d.\n",
+			  uncompressed_block_size, 
+			  MAX_BLOCK_SIZE);
+	  return 1;
+  }
+
 
   if(pstdout) {
       f_dst = fileno(stdout);
@@ -143,7 +156,7 @@ main(int argc, char *argv[])
       return 1;
   }
 
-  pbgzf_main(f_src, f_dst, compress, compress_level, compress_type, queue_size, n_threads);
+  pbgzf_main(f_src, f_dst, compress, compress_level, compress_type, queue_size, n_threads, uncompressed_block_size);
 
   if(!pstdout) unlink(argv[optind]);
 

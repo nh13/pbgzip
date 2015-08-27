@@ -11,10 +11,8 @@
 #include "pbgzf.h"
 #include "reader.h"
 
-static const int WINDOW_SIZE = MAX_BLOCK_SIZE;
-
 reader_t*
-reader_init(int fd, queue_t *input, uint8_t compress, block_pool_t *pool)
+reader_init(int fd, queue_t *input, uint8_t compress, block_pool_t *pool, int32_t uncompressed_block_size)
 {
   reader_t *r = calloc(1, sizeof(reader_t));
 
@@ -23,6 +21,8 @@ reader_init(int fd, queue_t *input, uint8_t compress, block_pool_t *pool)
   }
   else {
       r->fd_file = fd;
+	  if (-1 == uncompressed_block_size) r->uncompressed_block_size = MAX_BLOCK_SIZE;
+	  else r->uncompressed_block_size = uncompressed_block_size;
   }
   r->input = input;
   r->compress = compress;
@@ -117,7 +117,7 @@ reader_run(void *arg)
               }
           }
           else { 
-              if((b->block_length = read(r->fd_file, b->buffer, WINDOW_SIZE)) < 0) {
+              if((b->block_length = read(r->fd_file, b->buffer, r->uncompressed_block_size)) < 0) {
                   fprintf(stderr, "reader read: bug encountered\n");
                   exit(1);
               }
@@ -183,7 +183,7 @@ reader_run(void *arg)
           }
       }
       else { 
-          if((b->block_length = read(r->fd_file, b->buffer, WINDOW_SIZE)) < 0) {
+          if((b->block_length = read(r->fd_file, b->buffer, r->uncompressed_block_size)) < 0) {
               fprintf(stderr, "reader read: bug encountered\n");
               exit(1);
           }
