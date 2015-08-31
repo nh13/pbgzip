@@ -465,7 +465,7 @@ bgzf_read_block(BGZF* fp)
     }
 	size = count;
     if (count != sizeof(header)) {
-        report_error(fp, "read failed");
+        report_error(fp, "read the block header failed");
         return -1;
     }
     if (!bgzf_check_header(header)) {
@@ -482,7 +482,7 @@ bgzf_read_block(BGZF* fp)
     count = fread(&compressed_block[BLOCK_HEADER_LENGTH], 1, remaining, fp->file);
 #endif
     if (count != remaining) {
-        report_error(fp, "read failed");
+        report_error(fp, "read remaining bytes failed");
         return -1;
     }
 	size += count;

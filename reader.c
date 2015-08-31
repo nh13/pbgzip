@@ -51,7 +51,7 @@ reader_read_block(BGZF* fp, block_t *b)
   }
   size = count;
   if (count != sizeof(header)) {
-      fprintf(stderr, "read failed\n");
+      fprintf(stderr, "read failed: could not read block header\n");
       return -1;
   }
   if (!bgzf_check_header(header)) {
