@@ -9,7 +9,7 @@
 #include <unistd.h>
 #endif
 
-inline void
+void
 safe_mutex_lock(pthread_mutex_t *mutex)
 {
   int ret = pthread_mutex_lock(mutex);
@@ -19,7 +19,7 @@ safe_mutex_lock(pthread_mutex_t *mutex)
   }
 }
 
-inline void
+void
 safe_mutex_unlock(pthread_mutex_t *mutex)
 {
   int ret = pthread_mutex_unlock(mutex);
