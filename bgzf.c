@@ -51,7 +51,6 @@ extern off_t ftello(FILE *stream);
 extern int fseeko(FILE *stream, off_t offset, int whence);
 #endif
 
-inline
 void
 packInt16(uint8_t* buffer, uint16_t value)
 {
@@ -59,14 +58,12 @@ packInt16(uint8_t* buffer, uint16_t value)
     buffer[1] = value >> 8;
 }
 
-inline
 int
 unpackInt16(const uint8_t* buffer)
 {
     return (buffer[0] | (buffer[1] << 8));
 }
 
-inline
 void
 packInt32(uint8_t* buffer, uint32_t value)
 {

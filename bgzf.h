@@ -151,11 +151,11 @@ int bgzf_flush(BGZF* fp);
 int bgzf_flush_try(BGZF *fp, int size);
 int bgzf_check_bgzf(const char *fn);
 
-inline void
+void
 packInt16(uint8_t* buffer, uint16_t value);
-inline int
+int
 unpackInt16(const uint8_t* buffer);
-inline void
+void
 packInt32(uint8_t* buffer, uint32_t value);
 int
 bgzf_check_header(const bgzf_byte_t* header);
