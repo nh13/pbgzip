@@ -151,7 +151,11 @@ main(int argc, char *argv[])
       }
   }
 
-  if ((f_src = open(argv[optind], O_RDONLY)) < 0) {
+  // read from stdin if no more arguments, or a "-", are/is supplied. 
+  if (optind == argc || 0 == strcmp(argv[optind], "-")) {
+	  f_src = fileno(stdin);
+  }
+  else if ((f_src = open(argv[optind], O_RDONLY)) < 0) {
       fprintf(stderr, "[pbgzip] %s: %s\n", strerror(errno), argv[optind]);
       return 1;
   }
