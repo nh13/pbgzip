@@ -55,6 +55,9 @@ pbgzip_main_usage()
   fprintf(stderr, "         -S        the block size when reading uncompressed data (must be less than or equal to %d; -1 is auto) [%d]\n",
 		  MAX_BLOCK_SIZE,
 		  -1);
+#ifdef HAVE_IGZIP
+  fprintf(stderr, "         -i        use the intel igzip library for compression (deflation); not use for decompressoin (inflation)\n");
+#endif
   fprintf(stderr, "         -h        give this help\n");
   fprintf(stderr, "\n");
   return 1;
@@ -66,15 +69,29 @@ main(int argc, char *argv[])
 {
   int opt, f_src, f_dst;
   int32_t compress, compress_level, compress_type, pstdout, is_forced, queue_size, n_threads, uncompressed_block_size;
+#ifdef HAVE_IGZIP
+  int32_t use_igzip = 0;
+#endif
 
   compress = 1; compress_level = -1; compress_type = 0;
   pstdout = 0; is_forced = 0; queue_size = 1000; n_threads = detect_cpus();
   uncompressed_block_size = -1;
-#ifndef DISABLE_BZ2
-  while((opt = getopt(argc, argv, "cdhfn:t:q:S:0123456789")) >= 0){
-#else
-  while((opt = getopt(argc, argv, "cdhfn:q:S:0123456789")) >= 0){
-#endif
+
+#ifndef DISABLE_BZ2 // We should really find a better way
+#ifdef HAVE_IGZIP
+#define PBGZIP_ARG_STR "cdhfni:t:q:S:0123456789"
+#else // HAVE_IGZIP
+#define PBGZIP_ARG_STR "cdhfn:t:q:S:0123456789"
+#endif // HAVE_IGZIP
+#else // DISABLE_BZ2
+#ifdef HAVE_IGZIP
+#define PBGZIP_ARG_STR "cdhfni:q:S:0123456789"
+#else // HAVE_IGZIP
+#define PBGZIP_ARG_STR "cdhfn:q:S:0123456789"
+#endif // HAVE_IGZIP
+#endif // DISABLE_BZ2
+
+  while((opt = getopt(argc, argv, PBGZIP_ARG_STR)) >= 0) {
       if('0' <= opt && opt <= '9') {
           compress_level = opt - '0'; 
           continue;
@@ -85,6 +102,9 @@ main(int argc, char *argv[])
         case 'f': is_forced = 1; break;
         case 'q': queue_size = atoi(optarg); break;
         case 'n': n_threads = atoi(optarg); break;
+#ifdef HAVE_IGZIP
+		case 'i': use_igzip = 1; break;
+#endif
 #ifndef DISABLE_BZ2
         case 't': compress_type = atoi(optarg); break;
 #endif
@@ -160,7 +180,11 @@ main(int argc, char *argv[])
       return 1;
   }
 
+#ifdef HAVE_IGZIP
+  pbgzf_main(f_src, f_dst, compress, compress_level, compress_type, queue_size, n_threads, uncompressed_block_size, use_igzip);
+#else
   pbgzf_main(f_src, f_dst, compress, compress_level, compress_type, queue_size, n_threads, uncompressed_block_size);
+#endif
 
   if(!pstdout) unlink(argv[optind]);
 

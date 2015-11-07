@@ -139,7 +139,11 @@ void pbgzf_set_cache_size(PBGZF *fp, int cache_size);
 #endif
 
 void
+#ifdef HAVE_IGZIP
+pbgzf_main(int f_src, int f_dst, int compress, int compress_level, int compress_type, int queue_size, int num_threads, int uncompressed_block_size, int use_igzip);
+#else
 pbgzf_main(int f_src, int f_dst, int compress, int compress_level, int compress_type, int queue_size, int num_threads, int uncompressed_block_size);
+#endif
 
 
 #endif
