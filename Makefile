@@ -41,8 +41,7 @@ all:$(PROG)
 .PHONY:all-recur lib-recur clean-recur cleanlocal-recur install-recur
 
 pbgzip:lib-recur $(AOBJS)
-		$(CC) $(CFLAGS) -o $@ $(AOBJS) $(LDFLAGS) $(LIBPATH) -lm -lz -lbz2 -ligzip0c
-#		$(CC) $(CFLAGS) -o $@ $(AOBJS) $(LDFLAGS) $(LIBPATH) -lm -lz -lbz2
+		$(CC) $(CFLAGS) -o $@ $(AOBJS) $(LDFLAGS) $(LIBPATH) -lm -lz -lbz2
 
 #faidx_main.o:faidx.h razf.h
 
