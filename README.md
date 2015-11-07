@@ -1,8 +1,8 @@
 # PBGZIP - Parallel Block GZIP
 
 This tool and API implements parallel block gzip.
-For many formats, in particular Genomics Data Formats, data are compressed in fixed-length blocks, such that they can be easily indexed based on a (genomic) coordinate order, since typically each block is sorted according to this order.
-This allows for each block to be individually compressed (compressed), or more importantly, decompressed (inflated), with the latter enabling random retrieval of data in large files (gigabytes to terabytes).
+For many formats, in particular Genomics Data Formats, data are compressed in fixed-length blocks such that they can be easily indexed based on a (genomic) coordinate order, since typically each block is sorted according to this order.
+This allows for each block to be individually compressed (deflated), or more importantly, decompressed (inflated), with the latter enabling random retrieval of data in large files (gigabytes to terabytes).
 `pbgzip` is not limited to any particular format, but certain features are tailored to Genomics Data Formats when enabled (see below).
 Parallel decompression is somewhat faster, but truly the speedup comes during compression.
 
@@ -14,7 +14,7 @@ See: https://github.com/nh13/pbgzip/issues
 
 ## Limitations
 
-Due to the requirement that we must fit a chunk of compressed data into a maximum size block, we may fail at compression when the data has sufficiently high entroy (is too random).
+Due to the requirement that we must fit a chunk of compressed data into a maximum size block, we may fail at compression when the data has sufficiently high entropy (is too random).
 For example, try compressing a very random set of data:
 
 ```
