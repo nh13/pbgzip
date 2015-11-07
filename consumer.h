@@ -10,6 +10,9 @@ typedef struct {
     int8_t compress;
     int32_t compress_level;
     int32_t compress_type;
+#ifdef HAVE_IGZIP
+	int32_t use_igzip;
+#endif
     int16_t cid;
     int64_t n;
 } consumer_t;
@@ -21,7 +24,12 @@ consumer_init(queue_t *input,
               int8_t compress,
               int32_t compress_level,
               int32_t compress_type,
-              int32_t cid);
+#ifdef HAVE_IGZIP
+              int32_t cid, int32_t use_igzip
+#else
+              int32_t cid
+#endif
+);
 
 void*
 consumer_run(void *arg);

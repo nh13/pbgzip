@@ -1,12 +1,23 @@
-CC=         gcc
-CFLAGS=		-g -Wall -O2 -pthread
-#LDFLAGS=		-Wl,-rpath,\$$ORIGIN/../lib
+#########
+# Run 'USE_IGZIP=1 make' to compile with igzip support
+# https://software.intel.com/en-us/articles/igzip-a-high-performance-deflate-compressor-with-optimizations-for-genomic-data
+#
+
+CC=         gcc 
+CFLAGS=		-g -Wall -O2 -pthread 
+LDFLAGS=	
 DFLAGS=		-D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -D_USE_KNETFILE -DHAVE_LIBPTHREAD #-DDISABLE_BZ2
 AOBJS=		bgzf.o knetfile.o util.o block.o consumer.o queue.o reader.o writer.o pbgzf.o pbgzip.o
 PROG=		pbgzip
 INCLUDES=	-I.
 SUBDIRS=	. 
 LIBPATH=
+
+ifdef USE_IGZIP
+INCLUDES+=  -Iigzip/c_code -Iigzip/include
+LDFLAG+=    -ligzip0c #-ligzip1c
+DFLAGS+=    -DHAVE_IGZIP
+endif
 
 .SUFFIXES:.c .o
 .PHONY: all lib
@@ -30,7 +41,8 @@ all:$(PROG)
 .PHONY:all-recur lib-recur clean-recur cleanlocal-recur install-recur
 
 pbgzip:lib-recur $(AOBJS)
-		$(CC) $(CFLAGS) -o $@ $(AOBJS) $(LDFLAGS) $(LIBPATH) -lm -lz -lbz2
+		$(CC) $(CFLAGS) -o $@ $(AOBJS) $(LDFLAGS) $(LIBPATH) -lm -lz -lbz2 -ligzip0c
+#		$(CC) $(CFLAGS) -o $@ $(AOBJS) $(LDFLAGS) $(LIBPATH) -lm -lz -lbz2
 
 #faidx_main.o:faidx.h razf.h
 

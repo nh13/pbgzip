@@ -29,8 +29,14 @@ pbgzf_set_num_threads_per(int32_t n)
 }
 
 static consumers_t*
+#ifdef HAVE_IGZIP
+consumers_init(int32_t n, queue_t *input, queue_t *output, reader_t *reader, 
+               int32_t compress, int32_t compress_level, int32_t compress_type,
+			   int32_t use_igzip)
+#else
 consumers_init(int32_t n, queue_t *input, queue_t *output, reader_t *reader, 
                int32_t compress, int32_t compress_level, int32_t compress_type)
+#endif
 {
   consumers_t *c = NULL;
   int32_t i;
@@ -41,7 +47,11 @@ consumers_init(int32_t n, queue_t *input, queue_t *output, reader_t *reader,
   c->c = calloc(n, sizeof(consumer_t*));
 
   for(i=0;i<n;i++) {
+#ifdef HAVE_IGZIP
+      c->c[i] = consumer_init(input, output, reader, compress, compress_level, compress_type, i, use_igzip);
+#else
       c->c[i] = consumer_init(input, output, reader, compress, compress_level, compress_type, i);
+#endif
   }
 
   pthread_attr_init(&c->attr);
@@ -267,6 +277,12 @@ pbgzf_init(int fd, const char* __restrict mode)
       compress_type = 0;
   }
 #endif
+#ifdef HAVE_IGZIP
+  int32_t use_igzip = 0;
+  if (strchr(mode, 'I')) {
+	  use_igzip = 1;
+  }
+#endif
 
   fp = calloc(1, sizeof(PBGZF));
 
@@ -290,7 +306,11 @@ pbgzf_init(int fd, const char* __restrict mode)
   if('w' == open_mode) { // write to a compressed file
       fp->r = NULL; // do not read
       fp->p = NULL; // do not produce data
+#ifdef HAVE_IGZIP
+      fp->c = consumers_init(fp->num_threads, fp->input, fp->output, fp->r, 1, compress_level, compress_type, use_igzip); // deflate/compress
+#else
       fp->c = consumers_init(fp->num_threads, fp->input, fp->output, fp->r, 1, compress_level, compress_type); // deflate/compress
+#endif
       fp->w = writer_init(fd, fp->output, 1, compress_level, compress_type, fp->pool); // write data
       fp->o = outputter_init(fp->w);
   }
@@ -298,12 +318,20 @@ pbgzf_init(int fd, const char* __restrict mode)
       if(strchr(mode, 'u')) {// hidden functionality
           fp->r = reader_init(fd, fp->input, 1, fp->pool, -1); // read the uncompressed file
           fp->p = producer_init(fp->r);
+#ifdef HAVE_IGZIP
+          fp->c = consumers_init(fp->num_threads, fp->input, fp->output, fp->r, 2, compress_level, compress_type, use_igzip); // do nothing
+#else
           fp->c = consumers_init(fp->num_threads, fp->input, fp->output, fp->r, 2, compress_level, compress_type); // do nothing
+#endif
       }
       else {
           fp->r = reader_init(fd, fp->input, 0, fp->pool, -1); // read the compressed file
           fp->p = producer_init(fp->r);
+#ifdef HAVE_IGZIP
+          fp->c = consumers_init(fp->num_threads, fp->input, fp->output, fp->r, 0, compress_level, compress_type, use_igzip); // inflate
+#else
           fp->c = consumers_init(fp->num_threads, fp->input, fp->output, fp->r, 0, compress_level, compress_type); // inflate
+#endif
           fp->eof_ok = bgzf_check_EOF(fp->r->fp_bgzf);
       }
       fp->w = NULL;
@@ -696,7 +724,11 @@ void pbgzf_set_cache_size(PBGZF *fp, int cache_size)
 }
 
 void
+#ifdef HAVE_IGZIP
+pbgzf_main(int f_src, int f_dst, int compress, int compress_level, int compress_type, int queue_size, int num_threads, int uncompressed_block_size, int use_igzip)
+#else
 pbgzf_main(int f_src, int f_dst, int compress, int compress_level, int compress_type, int queue_size, int num_threads, int uncompressed_block_size)
+#endif
 {
   // NB: this gives us greater control over queue size and the like
   queue_t *input = NULL;
@@ -714,7 +746,11 @@ pbgzf_main(int f_src, int f_dst, int compress, int compress_level, int compress_
 
   r = reader_init(f_src, input, compress, pool, uncompressed_block_size);
   w = writer_init(f_dst, output, compress, compress_level, compress_type, pool);
+#ifdef HAVE_IGZIP
+  c = consumers_init(num_threads, input, output, r, compress, compress_level, compress_type, use_igzip);
+#else
   c = consumers_init(num_threads, input, output, r, compress, compress_level, compress_type);
+#endif
   p = producer_init(r);
   o = outputter_init(w);
 

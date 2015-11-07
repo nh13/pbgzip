@@ -8,6 +8,10 @@
 #endif
 #include <pthread.h>
 
+#ifdef HAVE_IGZIP
+#include <igzip_lib.h>
+#endif
+
 #include "bgzf.h"
 #include "util.h"
 #include "block.h"
@@ -23,7 +27,12 @@ consumer_init(queue_t *input,
               int8_t compress,
               int32_t compress_level,
               int32_t compress_type,
-              int32_t cid)
+#ifdef HAVE_IGZIP
+              int32_t cid, int32_t use_igzip
+#else
+              int32_t cid
+#endif
+		)
 {
   consumer_t *c = calloc(1, sizeof(consumer_t));
 
@@ -40,6 +49,9 @@ consumer_init(queue_t *input,
   c->cid = cid;
 
   c->buffer = malloc(sizeof(uint8_t)*MAX_BLOCK_SIZE);
+#ifdef HAVE_IGZIP
+  c->use_igzip = use_igzip;
+#endif
 
   return c;
 }
@@ -160,38 +172,29 @@ consumer_update_header(consumer_t *c, bgzf_byte_t *buffer, int32_t input_length,
 }
 
 static int
-consumer_deflate_block_gz(consumer_t *c, block_t *b)
+consumer_deflate_block_gz_zlib_loop(consumer_t *c, block_t *b, int *input_length, int compressed_length)
 {
   // Deflate the block in fp->uncompressed_block into fp->compressed_block.
   // Also adds an extra field that stores the compressed block length.
-  int32_t block_length;
-
-  memcpy(c->buffer, b->buffer, b->block_length); // copy uncompressed to compressed 
-
+  int32_t block_length = b->block_length;
+  
   // Notes:
   // fp->compressed_block is now b->buffer
   // fp->uncompressed_block is now c->buffer
   // block_length is now b->block_length
-
-  //bgzf_byte_t* buffer = fp->compressed_block;
-  //int buffer_size = fp->compressed_block_size;
   bgzf_byte_t* buffer = b->buffer; // destination
-  int buffer_size = MAX_BLOCK_SIZE;
-  block_length = b->block_length;
-
-  // Init gzip header
-  consumer_init_header(buffer);
 
   // loop to retry for blocks that do not compress enough
-  int input_length = block_length;
-  int compressed_length = 0;
+  (*input_length) = block_length;
+  compressed_length = 0;
+  int buffer_size = MAX_BLOCK_SIZE;
   while (1) {
       z_stream zs;
       zs.zalloc = NULL;
       zs.zfree = NULL;
       //zs.next_in = fp->uncompressed_block;
       zs.next_in = (void*)c->buffer;
-      zs.avail_in = input_length;
+      zs.avail_in = (*input_length);
       zs.next_out = (void*)&buffer[BLOCK_HEADER_LENGTH];
       zs.avail_out = buffer_size - BLOCK_HEADER_LENGTH - BLOCK_FOOTER_LENGTH;
 
@@ -209,8 +212,8 @@ consumer_deflate_block_gz(consumer_t *c, block_t *b)
               // Not enough space in buffer.
               // Can happen in the rare case the input doesn't compress enough.
               // Reduce the amount of input until it fits.
-              input_length -= 1024;
-              if (input_length <= 0) {
+              (*input_length) -= 1024;
+              if ((*input_length) <= 0) {
                   // should never happen
                   fprintf(stderr, "input reduction failed\n");
                   return -1;
@@ -234,7 +237,82 @@ consumer_deflate_block_gz(consumer_t *c, block_t *b)
       }
       break;
   }
+  
+  int remaining = block_length - (*input_length);
+  // since we read by blocks, we should have none remaining, but it could happen
+  // FIXME
+  if (0 != remaining) {
+      fprintf(stderr, "Error: remaining bytes (%d = %d - %d) in %s\n", remaining, block_length, (*input_length), __func__);
+	  fprintf(stderr, "This can happen when the input does not compress enough (a known bug).\n");
+      exit(1);
+  }
 
+  return compressed_length;
+}
+
+static int
+consumer_deflate_block_gz(consumer_t *c, block_t *b)
+{
+  // Deflate the block in fp->uncompressed_block into fp->compressed_block.
+  // Also adds an extra field that stores the compressed block length.
+  int32_t block_length;
+
+  memcpy(c->buffer, b->buffer, b->block_length); // copy uncompressed to compressed 
+
+  // Notes:
+  // fp->compressed_block is now b->buffer
+  // fp->uncompressed_block is now c->buffer
+  // block_length is now b->block_length
+
+  //bgzf_byte_t* buffer = fp->compressed_block;
+  //int buffer_size = fp->compressed_block_size;
+  bgzf_byte_t* buffer = b->buffer; // destination
+  block_length = b->block_length;
+
+  // Init gzip header
+  consumer_init_header(buffer);
+
+  // loop to retry for blocks that do not compress enough
+  int input_length = block_length;
+  int compressed_length = 0;
+
+#ifdef HAVE_IGZIP
+  int buffer_size = MAX_BLOCK_SIZE;
+  if (c->use_igzip == 1) {
+	  LZ_Stream2 lz_stream;
+	  init_stream(&lz_stream);
+
+	  lz_stream.avail_in = input_length;
+	  lz_stream.end_of_stream = 1; // always the last input buffer
+	  lz_stream.next_in = c->buffer;
+	  lz_stream.avail_out = buffer_size - BLOCK_HEADER_LENGTH - BLOCK_FOOTER_LENGTH;
+	  lz_stream.next_out = (uint8_t*)(buffer + BLOCK_HEADER_LENGTH);
+
+	  fast_lz(&lz_stream);
+
+	  compressed_length = lz_stream.total_out;
+	  compressed_length += BLOCK_HEADER_LENGTH + BLOCK_FOOTER_LENGTH;
+
+	  if (0 < lz_stream.avail_in) { // there wasn't enough room, so default to zlib
+		  compressed_length = consumer_deflate_block_gz_zlib_loop(c, b, &input_length, compressed_length);
+		  if (compressed_length < 0) return compressed_length;
+	  }
+
+	  if (compressed_length > MAX_BLOCK_SIZE) {
+		  // should never happen
+		  fprintf(stderr, "deflate overflow\n");
+		  return -1;
+	  }
+  }
+  else {
+  	compressed_length = consumer_deflate_block_gz_zlib_loop(c, b, &input_length, compressed_length);
+  }
+#else
+  // do the main deflate loop
+  compressed_length = consumer_deflate_block_gz_zlib_loop(c, b, &input_length, compressed_length);
+#endif
+
+  // update the header
   consumer_update_header(c, buffer, input_length, compressed_length);
 
   int remaining = block_length - input_length;
@@ -245,7 +323,7 @@ consumer_deflate_block_gz(consumer_t *c, block_t *b)
 	  fprintf(stderr, "This can happen when the input does not compress enough (a known bug).\n");
       exit(1);
   }
-  //fp->block_offset = remaining;
+  
   b->block_offset = remaining;
   
   return compressed_length;
