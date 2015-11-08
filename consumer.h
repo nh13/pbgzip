@@ -1,6 +1,8 @@
 #ifndef CONSUMER_H_
 #define CONSUMER_H_
 
+#include <config.h>
+
 typedef struct {
     queue_t *input;
     queue_t *output;
@@ -10,7 +12,7 @@ typedef struct {
     int8_t compress;
     int32_t compress_level;
     int32_t compress_type;
-#ifdef HAVE_IGZIP
+#ifdef HAVE_LIBIGZIP0C
 	int32_t use_igzip;
 #endif
     int16_t cid;
@@ -24,7 +26,7 @@ consumer_init(queue_t *input,
               int8_t compress,
               int32_t compress_level,
               int32_t compress_type,
-#ifdef HAVE_IGZIP
+#ifdef HAVE_LIBIGZIP0C
               int32_t cid, int32_t use_igzip
 #else
               int32_t cid

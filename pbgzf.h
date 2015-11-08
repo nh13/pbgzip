@@ -2,6 +2,7 @@
 #define PBGZF_H_
 
 #include <pthread.h>
+#include <config.h>
 #include "bgzf.h"
 #include "block.h"
 #include "queue.h"
@@ -139,7 +140,7 @@ void pbgzf_set_cache_size(PBGZF *fp, int cache_size);
 #endif
 
 void
-#ifdef HAVE_IGZIP
+#ifdef HAVE_LIBIGZIP0C
 pbgzf_main(int f_src, int f_dst, int compress, int compress_level, int compress_type, int queue_size, int num_threads, int uncompressed_block_size, int use_igzip);
 #else
 pbgzf_main(int f_src, int f_dst, int compress, int compress_level, int compress_type, int queue_size, int num_threads, int uncompressed_block_size);

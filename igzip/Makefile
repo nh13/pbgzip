@@ -1,4 +1,5 @@
 INSTALL_PATH?=/usr/local
+UNAME := $(shell uname)
 
 EXE0 := igzip0
 EXE0C := igzip0c
@@ -12,7 +13,11 @@ SLIB0 := libigzip0.so
 SLIB0C := libigzip0c.so
 SLIB1 := libigzip1.so
 SLIB1C := libigzip1c.so
+ifeq ($(UNAME), Darwin)
+YASM := yasm --prefix="_"
+else
 YASM := yasm
+endif
 OBJ_DIR0 := obj0
 OBJ_DIR0C := obj0c
 OBJ_DIR1 := obj1
@@ -30,8 +35,13 @@ INCLUDES := $(foreach i,$(INCLUDE_DIRS),-I $i)
 
 CXX := g++
 CC  := gcc
+ifeq ($(UNAME), Darwin)
+CXXFLAGS := -m64 -g -D LINUX $(INCLUDES) -O2
+ASMFLAGS := -f macho64 -X gnu -D LINUX $(INCLUDES)
+else
 CXXFLAGS := -g -D LINUX $(INCLUDES) -O2
 ASMFLAGS := -f x64 -f elf64 -X gnu -g dwarf2 -D LINUX $(INCLUDES)
+endif
 LDFLAGS += -g
 
 lib_obj_files := \
@@ -416,4 +426,7 @@ clean:
 ########################################################################
 
 install: all
-	install $(wildcard libigzip*c.so) -t ${INSTALL_PATH}/lib
+	install $(SLIB0C) $(SLIB1C) $(INSTALL_PATH)/lib
+	install -d $(INSTALL_PATH)/include/igzip
+	install c_code/*.h $(INSTALL_PATH)/include/igzip
+	install include/*.h $(INSTALL_PATH)/include/igzip

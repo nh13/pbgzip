@@ -3,13 +3,14 @@
 #include <stdint.h>
 #include <string.h>
 #include <zlib.h>
+#include <config.h>
 #ifndef DISABLE_BZ2
 #include <bzlib.h>
 #endif
 #include <pthread.h>
 
-#ifdef HAVE_IGZIP
-#include <igzip_lib.h>
+#ifdef HAVE_LIBIGZIP0C
+#include <igzip/igzip_lib.h>
 #endif
 
 #include "bgzf.h"
@@ -27,7 +28,7 @@ consumer_init(queue_t *input,
               int8_t compress,
               int32_t compress_level,
               int32_t compress_type,
-#ifdef HAVE_IGZIP
+#ifdef HAVE_LIBIGZIP0C
               int32_t cid, int32_t use_igzip
 #else
               int32_t cid
@@ -49,7 +50,7 @@ consumer_init(queue_t *input,
   c->cid = cid;
 
   c->buffer = malloc(sizeof(uint8_t)*MAX_BLOCK_SIZE);
-#ifdef HAVE_IGZIP
+#ifdef HAVE_LIBIGZIP0C
   c->use_igzip = use_igzip;
 #endif
 
@@ -276,7 +277,7 @@ consumer_deflate_block_gz(consumer_t *c, block_t *b)
   int input_length = block_length;
   int compressed_length = 0;
 
-#ifdef HAVE_IGZIP
+#ifdef HAVE_LIBIGZIP0C
   int buffer_size = MAX_BLOCK_SIZE;
   if (c->use_igzip == 1) {
 	  LZ_Stream2 lz_stream;
