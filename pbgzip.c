@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
+#include <config.h>
 
 #include "bgzf.h"
 #include "block.h"
@@ -55,7 +56,7 @@ pbgzip_main_usage()
   fprintf(stderr, "         -S        the block size when reading uncompressed data (must be less than or equal to %d; -1 is auto) [%d]\n",
 		  MAX_BLOCK_SIZE,
 		  -1);
-#ifdef HAVE_IGZIP
+#ifdef HAVE_LIBIGZIP0C
   fprintf(stderr, "         -i        use the intel igzip library for compression (deflation); not use for decompressoin (inflation)\n");
 #endif
   fprintf(stderr, "         -h        give this help\n");
@@ -69,7 +70,7 @@ main(int argc, char *argv[])
 {
   int opt, f_src, f_dst;
   int32_t compress, compress_level, compress_type, pstdout, is_forced, queue_size, n_threads, uncompressed_block_size;
-#ifdef HAVE_IGZIP
+#ifdef HAVE_LIBIGZIP0C
   int32_t use_igzip = 0;
 #endif
 
@@ -78,17 +79,17 @@ main(int argc, char *argv[])
   uncompressed_block_size = -1;
 
 #ifndef DISABLE_BZ2 // We should really find a better way
-#ifdef HAVE_IGZIP
+#ifdef HAVE_LIBIGZIP0C
 #define PBGZIP_ARG_STR "cdhfn:it:q:S:0123456789"
-#else // HAVE_IGZIP
+#else // HAVE_LIBIGZIP0C
 #define PBGZIP_ARG_STR "cdhfn:t:q:S:0123456789"
-#endif // HAVE_IGZIP
+#endif // HAVE_LIBIGZIP0C
 #else // DISABLE_BZ2
-#ifdef HAVE_IGZIP
+#ifdef HAVE_LIBIGZIP0C
 #define PBGZIP_ARG_STR "cdhfn:iq:S:0123456789"
-#else // HAVE_IGZIP
+#else // HAVE_LIBIGZIP0C
 #define PBGZIP_ARG_STR "cdhfn:q:S:0123456789"
-#endif // HAVE_IGZIP
+#endif // HAVE_LIBIGZIP0C
 #endif // DISABLE_BZ2
 
   while((opt = getopt(argc, argv, PBGZIP_ARG_STR)) >= 0) {
@@ -102,7 +103,7 @@ main(int argc, char *argv[])
         case 'f': is_forced = 1; break;
         case 'q': queue_size = atoi(optarg); break;
         case 'n': n_threads = atoi(optarg); break;
-#ifdef HAVE_IGZIP
+#ifdef HAVE_LIBIGZIP0C
 		case 'i': use_igzip = 1; break;
 #endif
 #ifndef DISABLE_BZ2
@@ -180,7 +181,7 @@ main(int argc, char *argv[])
       return 1;
   }
 
-#ifdef HAVE_IGZIP
+#ifdef HAVE_LIBIGZIP0C
   pbgzf_main(f_src, f_dst, compress, compress_level, compress_type, queue_size, n_threads, uncompressed_block_size, use_igzip);
 #else
   pbgzf_main(f_src, f_dst, compress, compress_level, compress_type, queue_size, n_threads, uncompressed_block_size);
