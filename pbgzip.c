@@ -79,13 +79,13 @@ main(int argc, char *argv[])
 
 #ifndef DISABLE_BZ2 // We should really find a better way
 #ifdef HAVE_IGZIP
-#define PBGZIP_ARG_STR "cdhfni:t:q:S:0123456789"
+#define PBGZIP_ARG_STR "cdhfn:it:q:S:0123456789"
 #else // HAVE_IGZIP
 #define PBGZIP_ARG_STR "cdhfn:t:q:S:0123456789"
 #endif // HAVE_IGZIP
 #else // DISABLE_BZ2
 #ifdef HAVE_IGZIP
-#define PBGZIP_ARG_STR "cdhfni:q:S:0123456789"
+#define PBGZIP_ARG_STR "cdhfn:iq:S:0123456789"
 #else // HAVE_IGZIP
 #define PBGZIP_ARG_STR "cdhfn:q:S:0123456789"
 #endif // HAVE_IGZIP
