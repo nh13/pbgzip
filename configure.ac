@@ -27,7 +27,6 @@ AC_GNU_SOURCE
 # set CFLAGS 
 default_CFLAGS="-g -Wall -O2 -pthread";
 extended_CFLAGS="-D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -D_USE_KNETFILE -DHAVE_LIBPTHREAD" # #-DDISABLE_BZ2
-AM_CPPFLAGS="-I. -Iigzip/c_code -Iigzip/include"
 
 AC_MSG_CHECKING(whether the git revision is available)
 gitrev="`git log 2>/dev/null | grep -m 1 commit | awk '{print $2}'`";
@@ -48,6 +47,17 @@ fi
 AC_ARG_ENABLE(intel64, [  --enable-intel64        optimize for Intel64 CPU such as Xeon and Core2], [extended_CFLAGS="${extended_CFLAGS} -mtune=nocona"], [])
 AC_ARG_ENABLE(bz2,     [  --disable-bz2           use this option to disable bz2 support], [AC_DEFINE(DISABLE_BZ2,1,[Define 1 if we want to disable bz2 support])], [AC_CHECK_LIB([bz2], [BZ2_bzRead])])
 AC_ARG_ENABLE(igzip,   [  --enable-igzip          use this option to enable igzip support], [AC_CHECK_LIB([igzip0c], [fast_lz])], [])
+AC_ARG_ENABLE(ipp,     [  --enable-ipp            use this option to enable intel integrated performance primitives support (please set LDFLAGS and CFLAGS appropriately)], 
+			  [
+			   AC_CHECK_LIB([ippdc], [ippdcGetLibVersion], [], [AC_MSG_ERROR(["--enable-ipp used but ippdc not found"])]) 
+			   AC_CHECK_LIB([ippcc], [ippccGetLibVersion], [], [AC_MSG_ERROR(["--enable-ipp used but ippcc not found"])]) 
+			   AC_CHECK_LIB([ippcv], [ippcvGetLibVersion], [], [AC_MSG_ERROR(["--enable-ipp used but ippcv not found"])]) 
+			   AC_CHECK_LIB([ippch], [ippchGetLibVersion], [], [AC_MSG_ERROR(["--enable-ipp used but ippch not found"])]) 
+			   AC_CHECK_LIB([ippvm], [ippvmGetLibVersion], [], [AC_MSG_ERROR(["--enable-ipp used but ippvm not found"])]) 
+			   AC_CHECK_LIB([ippi], [ippiGetLibVersion], [], [AC_MSG_ERROR(["--enable-ipp used but ippi not found"])]) 
+			   AC_CHECK_LIB([ipps], [ippsGetLibVersion], [], [AC_MSG_ERROR(["--enable-ipp used but ipps not found"])]) 
+			   AC_CHECK_LIB([ippcore], [ippGetLibVersion], [], [AC_MSG_ERROR(["--enable-ipp used but ippcore not found"])]) 
+			  ], [])
 
 CFLAGS="${CFLAGS} ${default_CFLAGS} ${extended_CFLAGS}";
 
