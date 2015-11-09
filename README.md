@@ -56,9 +56,42 @@ Please thank the original authors of `igzip`: Jim Guilford, Vinodh Gopal, Sean G
 Also thank Paolo Narvaez, Mishali Naik and Gil Wolrich for their contributions.
 Finally, thank Intel for sponsoring the `igzip` work.
 
+## Intel Integrated Performance Primitives (Intel IPP) Support
+
+Intel's Integrated Performance Primitives (Intel IPP) can boost performance of compression (deflation) by 20-30%.
+Currently, Intel IPP 9.0 is supported.
+
+#### Enable IGZIP when configuring PBGZIP
+
+Make sure to enable `ipp` when running configure:
+
+```
+  ./configure --enable-ipp
+```
+
+## Installing and Linking Intel IPP 
+
+1. Install Intel's IPP (see [Intel IPP](https://software.intel.com/en-us/intel-ipp)]). 
+
+2. Make sure that the path to the installed Intel IPP libraries is either (a)added to your relevant environment variables, or (b) or specified during the configure command.
+
+(a) Add the following to your `.bashrc`.  Please modify the path for your installation. 
+
+```
+export LIBRARY_PATH=${LIBRARY_PATH}:/opt/intel/compilers_and_libraries_2016.0.083/mac/ipp/lib
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/opt/intel/compilers_and_libraries_2016.0.083/mac/ipp/lib
+```
+
+(b) Append the following to the arguments to `configure`.  Please modify the path for your installation.
+
+```
+LDFLAGS=-L/opt/intel/compilers_and_libraries_2016.0.083/mac/ipp/lib CFLAGS=-I/opt/intel/compilers_and_libraries_2016.0.083/mac/ipp/include
+```
+
 ## Current Issues
 
 For developer issues, see: https://github.com/nh13/pbgzip/issues
+
 
 #### Compression Limitations
 
