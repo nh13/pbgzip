@@ -49,6 +49,7 @@ AC_ARG_ENABLE(bz2,     [  --disable-bz2           use this option to disable bz2
 AC_ARG_ENABLE(igzip,   [  --enable-igzip          use this option to enable igzip support], [AC_CHECK_LIB([igzip0c], [fast_lz])], [])
 AC_ARG_ENABLE(ipp,     [  --enable-ipp            use this option to enable intel integrated performance primitives support (please set LDFLAGS and CFLAGS appropriately)], 
 			  [
+			   AC_CHECK_LIB([ippcore], [ippGetLibVersion], [], [AC_MSG_ERROR(["--enable-ipp used but ippcore not found"])]) 
 			   AC_CHECK_LIB([ippdc], [ippdcGetLibVersion], [], [AC_MSG_ERROR(["--enable-ipp used but ippdc not found"])]) 
 			   AC_CHECK_LIB([ippcc], [ippccGetLibVersion], [], [AC_MSG_ERROR(["--enable-ipp used but ippcc not found"])]) 
 			   AC_CHECK_LIB([ippcv], [ippcvGetLibVersion], [], [AC_MSG_ERROR(["--enable-ipp used but ippcv not found"])]) 
@@ -56,7 +57,6 @@ AC_ARG_ENABLE(ipp,     [  --enable-ipp            use this option to enable inte
 			   AC_CHECK_LIB([ippvm], [ippvmGetLibVersion], [], [AC_MSG_ERROR(["--enable-ipp used but ippvm not found"])]) 
 			   AC_CHECK_LIB([ippi], [ippiGetLibVersion], [], [AC_MSG_ERROR(["--enable-ipp used but ippi not found"])]) 
 			   AC_CHECK_LIB([ipps], [ippsGetLibVersion], [], [AC_MSG_ERROR(["--enable-ipp used but ipps not found"])]) 
-			   AC_CHECK_LIB([ippcore], [ippGetLibVersion], [], [AC_MSG_ERROR(["--enable-ipp used but ippcore not found"])]) 
 			  ], [])
 
 CFLAGS="${CFLAGS} ${default_CFLAGS} ${extended_CFLAGS}";
