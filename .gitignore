@@ -1,0 +1,11 @@
+autom4te.cache
+aclocal.m4
+stamp-h1
+configure
+config.*
+pbgzip.git.rev
+Makefile.in
+Makefile
+.deps
+*.o
+pbgzip
